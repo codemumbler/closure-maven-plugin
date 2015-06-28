@@ -17,6 +17,9 @@ import java.util.logging.Level;
 public class MinifyJSMojo
 		extends AbstractMojo {
 
+	@Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
+	private File externalJsDirectory;
+
 	@Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
 	private File jsDirectory;
 
@@ -39,6 +42,11 @@ public class MinifyJSMojo
 		WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
 
 		List<SourceFile> externalJavascriptFiles = new ArrayList<>();
+		if ( externalJsDirectory != null && externalJsDirectory.listFiles() != null ) {
+			for (File file : externalJsDirectory.listFiles()) {
+				externalJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
+			}
+		}
 
 		List<SourceFile> primaryJavascriptFiles = new ArrayList<>();
 		for (File file : jsDirectory.listFiles()) {
