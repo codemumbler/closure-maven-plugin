@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
+@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.COMPILE)
 public class MinifyJSMojo
 		extends AbstractMojo {
 
@@ -23,13 +23,19 @@ public class MinifyJSMojo
 	@Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
 	private String outputFilename;
 
+	@Parameter(defaultValue = "false")
+	private boolean compile;
+
 	public void execute() throws MojoExecutionException {
 		com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
 		com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
 
 		CompilerOptions options = new CompilerOptions();
-		CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
-
+		if (!compile) {
+			CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
+		} else {
+			CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
+		}
 		WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
 
 		List<SourceFile> externalJavascriptFiles = new ArrayList<>();

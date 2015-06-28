@@ -1,0 +1,1 @@
+var ds=new function(){return{"data":function(){return[1,2,3]}}};var ds1=ds();if(!ds1)alert("No datasource");

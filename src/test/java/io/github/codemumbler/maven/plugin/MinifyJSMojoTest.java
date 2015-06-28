@@ -33,6 +33,22 @@ public class MinifyJSMojoTest {
 				loadFileAsString("target/test-classes/one-js/target/one-js/js/combined.min.js"));
 	}
 
+	@Test
+	public void twoJS() throws Exception {
+		new File("target/test-classes/two-js/target/two-js/js").mkdirs();
+		executeMojo("target/test-classes/two-js");
+		Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
+				loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
+	}
+
+	@Test
+	public void compile() throws Exception {
+		new File("target/test-classes/two-js/target/two-js/js").mkdirs();
+		executeMojo("target/test-classes/two-js");
+		Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
+				loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
+	}
+
 	private String loadFileAsString(String fileName) throws Exception {
 		return IOUtil.toString(new FileInputStream(fileName)).replaceAll("\r", "").trim();
 	}
