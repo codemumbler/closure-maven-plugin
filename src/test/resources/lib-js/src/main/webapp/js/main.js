@@ -1,3 +1,3 @@
-if (0==1) {
-	alert("test");
+if (0 == 1) {
+  alert("test");
 }

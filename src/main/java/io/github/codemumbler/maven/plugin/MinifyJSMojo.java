@@ -15,57 +15,57 @@ import java.util.logging.Level;
 
 @Mojo(name = "minify-js", defaultPhase = LifecyclePhase.COMPILE)
 public class MinifyJSMojo
-		extends AbstractMojo {
+    extends AbstractMojo {
 
-	@Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
-	private File externalJsDirectory;
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
+  private File externalJsDirectory;
 
-	@Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
-	private File jsDirectory;
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
+  private File jsDirectory;
 
-	@Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
-	private String outputFilename;
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
+  private String outputFilename;
 
-	@Parameter(defaultValue = "false")
-	private boolean compile;
+  @Parameter(defaultValue = "false")
+  private boolean compile;
 
-	public void execute() throws MojoExecutionException {
-		com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
-		com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
+  public void execute() throws MojoExecutionException {
+    com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
+    com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
 
-		CompilerOptions options = new CompilerOptions();
-		if (!compile) {
-			CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
-		} else {
-			CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
-		}
-		WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
+    CompilerOptions options = new CompilerOptions();
+    if (!compile) {
+      CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
+    } else {
+      CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
+    }
+    WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
 
-		List<SourceFile> externalJavascriptFiles = new ArrayList<>();
-		if ( externalJsDirectory != null && externalJsDirectory.listFiles() != null ) {
-			for (File file : externalJsDirectory.listFiles()) {
-				externalJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
-			}
-		}
+    List<SourceFile> externalJavascriptFiles = new ArrayList<>();
+    if (externalJsDirectory != null && externalJsDirectory.listFiles() != null) {
+      for (File file : externalJsDirectory.listFiles()) {
+        externalJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
+      }
+    }
 
-		List<SourceFile> primaryJavascriptFiles = new ArrayList<>();
-		for (File file : jsDirectory.listFiles()) {
-			primaryJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
-		}
+    List<SourceFile> primaryJavascriptFiles = new ArrayList<>();
+    for (File file : jsDirectory.listFiles()) {
+      primaryJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
+    }
 
-		compiler.compile(externalJavascriptFiles, primaryJavascriptFiles, options);
+    compiler.compile(externalJavascriptFiles, primaryJavascriptFiles, options);
 
-		for (JSError message : compiler.getWarnings()) {
-			System.err.println("Warning message: " + message.toString());
-		}
+    for (JSError message : compiler.getWarnings()) {
+      System.err.println("Warning message: " + message.toString());
+    }
 
-		for (JSError message : compiler.getErrors()) {
-			System.err.println("Error message: " + message.toString());
-		}
-		try (FileWriter outputFile = new FileWriter(outputFilename)) {
-			outputFile.write(compiler.toSource());
-		} catch (Exception e) {
-			throw new MojoExecutionException("Error while writing minified file", e);
-		}
-	}
+    for (JSError message : compiler.getErrors()) {
+      System.err.println("Error message: " + message.toString());
+    }
+    try (FileWriter outputFile = new FileWriter(outputFilename)) {
+      outputFile.write(compiler.toSource());
+    } catch (Exception e) {
+      throw new MojoExecutionException("Error while writing minified file", e);
+    }
+  }
 }
