@@ -57,6 +57,14 @@ public class MinifyJSMojoTest {
         loadFileAsString("target/test-classes/lib-js/target/lib-js/js/combined.min.js"));
   }
 
+  @Test
+  public void updateHTMLPage_updatedOneJs() throws Exception {
+    new File("target/test-classes/one-js/target/one-js/js").mkdirs();
+    executeMojo("target/test-classes/one-js");
+    Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.html"),
+        loadFileAsString("target/test-classes/one-js/target/one-js/index.html"));
+  }
+
   private String loadFileAsString(String fileName) throws Exception {
     return IOUtil.toString(new FileInputStream(fileName)).replaceAll("\r", "").trim();
   }

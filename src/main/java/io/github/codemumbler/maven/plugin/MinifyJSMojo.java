@@ -6,14 +6,17 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.codehaus.plexus.util.IOUtil;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.COMPILE)
+@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
 public class MinifyJSMojo
     extends AbstractMojo {
 
@@ -28,6 +31,15 @@ public class MinifyJSMojo
 
   @Parameter(defaultValue = "false")
   private boolean compile;
+
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp")
+  private File htmlSourceDirectory;
+
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
+  private String htmlOutputDirectory;
+
+  @Parameter(defaultValue = "true")
+  private boolean updateHTML;
 
   public void execute() throws MojoExecutionException {
     com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
@@ -48,12 +60,12 @@ public class MinifyJSMojo
       }
     }
 
-    List<SourceFile> primaryJavascriptFiles = new ArrayList<>();
+    List<SourceFile> projectSourceFiles = new ArrayList<>();
     for (File file : jsDirectory.listFiles()) {
-      primaryJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
+      projectSourceFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
     }
 
-    compiler.compile(externalJavascriptFiles, primaryJavascriptFiles, options);
+    compiler.compile(externalJavascriptFiles, projectSourceFiles, options);
 
     for (JSError message : compiler.getWarnings()) {
       System.err.println("Warning message: " + message.toString());
@@ -67,5 +79,34 @@ public class MinifyJSMojo
     } catch (Exception e) {
       throw new MojoExecutionException("Error while writing minified file", e);
     }
+    if (updateHTML) {
+      try {
+        updateHTMLJSReferences(projectSourceFiles);
+      } catch (Exception e) {
+        throw new MojoExecutionException("Error updating HTML files", e);
+      }
+    }
+  }
+
+  private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
+    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
+      @Override
+      public boolean accept(File pathname) {
+        return (pathname.getName().endsWith(".html"));
+      }
+    });
+    for (File htmlFile : htmlFiles) {
+      String content = loadFileAsString(htmlFile);
+      content = content.replace("<script src=\"js/main.js\"></script>",
+          "<script src=\"js/combined.min.js\"></script>");
+      String outputHTMLFilename = htmlOutputDirectory + "/" + htmlFile.getName();
+      try (FileWriter outputFile = new FileWriter(outputHTMLFilename)) {
+        outputFile.write(content);
+      }
+    }
+  }
+
+  private String loadFileAsString(File file) throws Exception {
+    return IOUtil.toString(new FileInputStream(file)).replaceAll("\r", "").trim();
   }
 }
