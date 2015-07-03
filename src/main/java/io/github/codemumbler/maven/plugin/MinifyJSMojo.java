@@ -97,8 +97,20 @@ public class MinifyJSMojo
     });
     for (File htmlFile : htmlFiles) {
       String content = loadFileAsString(htmlFile);
-      content = content.replace("<script src=\"js/main.js\"></script>",
-          "<script src=\"js/combined.min.js\"></script>");
+      boolean replaced = false;
+      for (SourceFile jsSourceFile : projectSourceFiles) {
+        String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + "\\", "");
+        src = src.replace("\\", "/");
+        if (replaced) {
+          content = content.replaceAll("\\s*<script src=\"" + src + "\"></script>", "");
+          continue;
+        }
+        if (content.contains("<script src=\"" + src + "\"></script>")) {
+          content = content.replace("<script src=\"" + src + "\"></script>",
+              "<script src=\"js/combined.min.js\"></script>");
+          replaced = true;
+        }
+      }
       String outputHTMLFilename = htmlOutputDirectory + "/" + htmlFile.getName();
       try (FileWriter outputFile = new FileWriter(outputHTMLFilename)) {
         outputFile.write(content);
