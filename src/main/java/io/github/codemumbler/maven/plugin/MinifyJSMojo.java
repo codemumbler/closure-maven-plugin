@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
+@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class MinifyJSMojo
     extends AbstractMojo {
 
@@ -61,7 +61,12 @@ public class MinifyJSMojo
     }
 
     List<SourceFile> projectSourceFiles = new ArrayList<>();
-    for (File file : jsDirectory.listFiles()) {
+    File[] projectJSFiles = jsDirectory.listFiles(new FileFilter() {
+      @Override public boolean accept(File file) {
+        return !file.isDirectory() && file.getName().endsWith(".js");
+      }
+    });
+    for (File file : projectJSFiles) {
       projectSourceFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
     }
 
@@ -74,6 +79,8 @@ public class MinifyJSMojo
     for (JSError message : compiler.getErrors()) {
       System.err.println("Error message: " + message.toString());
     }
+    String outputPath = outputFilename.substring(0, outputFilename.lastIndexOf("/"));
+    new File(outputPath).mkdirs();
     try (FileWriter outputFile = new FileWriter(outputFilename)) {
       outputFile.write(compiler.toSource());
     } catch (Exception e) {

@@ -27,7 +27,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void oneJS() throws Exception {
-    new File("target/test-classes/one-js/target/one-js/js").mkdirs();
     executeMojo("target/test-classes/one-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.js"),
         loadFileAsString("target/test-classes/one-js/target/one-js/js/combined.min.js"));
@@ -35,7 +34,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void twoJS() throws Exception {
-    new File("target/test-classes/two-js/target/two-js/js").mkdirs();
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
         loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
@@ -43,7 +41,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void compile() throws Exception {
-    new File("target/test-classes/two-js/target/two-js/js").mkdirs();
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
         loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
@@ -51,7 +48,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void externalLibrariesJS() throws Exception {
-    new File("target/test-classes/lib-js/target/lib-js/js").mkdirs();
     executeMojo("target/test-classes/lib-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/lib-js/expected.js"),
         loadFileAsString("target/test-classes/lib-js/target/lib-js/js/combined.min.js"));
@@ -59,7 +55,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void updateHTMLPage_updatedOneJs() throws Exception {
-    new File("target/test-classes/one-js/target/one-js/js").mkdirs();
     executeMojo("target/test-classes/one-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.html"),
         loadFileAsString("target/test-classes/one-js/target/one-js/index.html"));
@@ -67,7 +62,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void updateHTMLPage_updatedTwoJs() throws Exception {
-    new File("target/test-classes/two-js/target/two-js/js").mkdirs();
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.html"),
         loadFileAsString("target/test-classes/two-js/target/two-js/index.html"));
@@ -75,7 +69,6 @@ public class MinifyJSMojoTest {
 
   @Test
   public void updateHTMLPage_updatedLibJs() throws Exception {
-    new File("target/test-classes/lib-js/target/lib-js/js").mkdirs();
     executeMojo("target/test-classes/lib-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/lib-js/expected.html"),
         loadFileAsString("target/test-classes/lib-js/target/lib-js/index.html"));
