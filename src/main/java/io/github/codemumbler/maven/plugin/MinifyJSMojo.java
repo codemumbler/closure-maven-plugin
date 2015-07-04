@@ -55,8 +55,13 @@ public class MinifyJSMojo
     WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
 
     List<SourceFile> externalJavascriptFiles = new ArrayList<>();
-    if (externalJsDirectory != null && externalJsDirectory.listFiles() != null) {
-      for (File file : externalJsDirectory.listFiles()) {
+    if ( externalJsDirectory != null && externalJsDirectory.listFiles() != null ) {
+      File[] externalJSFiles = externalJsDirectory.listFiles(new FileFilter() {
+        @Override public boolean accept(File file) {
+          return !file.isDirectory() && file.getName().endsWith(".js");
+        }
+      });
+      for (File file : externalJSFiles) {
         externalJavascriptFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
       }
     }
