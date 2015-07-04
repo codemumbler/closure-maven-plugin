@@ -20,6 +20,7 @@ import java.util.logging.Level;
 public class MinifyJSMojo
     extends AbstractMojo {
 
+  private static final String PATH_SEPARATOR = System.getProperty("file.separator");
   @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
   private File externalJsDirectory;
 
@@ -106,7 +107,7 @@ public class MinifyJSMojo
       String content = loadFileAsString(htmlFile);
       boolean replaced = false;
       for (SourceFile jsSourceFile : projectSourceFiles) {
-        String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + "\\", "");
+        String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + PATH_SEPARATOR, "");
         src = src.replace("\\", "/");
         if (replaced) {
           content = content.replaceAll("\\s*<script src=\"" + src + "\"></script>", "");
@@ -118,7 +119,7 @@ public class MinifyJSMojo
           replaced = true;
         }
       }
-      String outputHTMLFilename = htmlOutputDirectory + "/" + htmlFile.getName();
+      String outputHTMLFilename = htmlOutputDirectory + PATH_SEPARATOR + htmlFile.getName();
       try (FileWriter outputFile = new FileWriter(outputHTMLFilename)) {
         outputFile.write(content);
       }
