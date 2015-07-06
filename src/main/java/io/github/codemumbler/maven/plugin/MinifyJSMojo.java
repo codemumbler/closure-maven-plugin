@@ -15,6 +15,8 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class MinifyJSMojo
@@ -108,18 +110,20 @@ public class MinifyJSMojo
         return (pathname.getName().endsWith(".html"));
       }
     });
+
     for (File htmlFile : htmlFiles) {
       String content = loadFileAsString(htmlFile);
       boolean replaced = false;
       for (SourceFile jsSourceFile : projectSourceFiles) {
         String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + PATH_SEPARATOR, "");
         src = src.replace("\\", "/");
+        Pattern pattern = Pattern.compile("<script.*?src=\"" + src + "\".*?></script>");
+        Matcher matcher = pattern.matcher(content);
         if (replaced) {
           content = content.replaceAll("\\s*<script.*?src=\"" + src + "\".*?></script>", "");
           continue;
         }
-        if (content.contains("<script src=\"" + src + "\"></script>")
-            || content.contains("<script src=\"" + src + "\" type=\"text/javascript\"></script>")) {
+        if (matcher.find()) {
           content = content.replaceAll("<script.*?src=\"" + src + "\".*?></script>",
               "<script src=\"js/combined.min.js\"></script>");
           replaced = true;
