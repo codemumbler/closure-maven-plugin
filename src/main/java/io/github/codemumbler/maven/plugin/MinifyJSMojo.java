@@ -115,11 +115,12 @@ public class MinifyJSMojo
         String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + PATH_SEPARATOR, "");
         src = src.replace("\\", "/");
         if (replaced) {
-          content = content.replaceAll("\\s*<script src=\"" + src + "\"></script>", "");
+          content = content.replaceAll("\\s*<script.*?src=\"" + src + "\".*?></script>", "");
           continue;
         }
-        if (content.contains("<script src=\"" + src + "\"></script>")) {
-          content = content.replace("<script src=\"" + src + "\"></script>",
+        if (content.contains("<script src=\"" + src + "\"></script>")
+            || content.contains("<script src=\"" + src + "\" type=\"text/javascript\"></script>")) {
+          content = content.replaceAll("<script.*?src=\"" + src + "\".*?></script>",
               "<script src=\"js/combined.min.js\"></script>");
           replaced = true;
         }
