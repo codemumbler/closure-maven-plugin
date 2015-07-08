@@ -40,6 +40,13 @@ public class MinifyJSMojoTest {
   }
 
   @Test
+  public void subfolderJS() throws Exception {
+    executeMojo("target/test-classes/subfolder-js");
+    Assert.assertEquals(loadFileAsString("target/test-classes/subfolder-js/expected.js"),
+        loadFileAsString("target/test-classes/subfolder-js/target/subfolder-js/js/combined.min.js"));
+  }
+
+  @Test
   public void compile() throws Exception {
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),

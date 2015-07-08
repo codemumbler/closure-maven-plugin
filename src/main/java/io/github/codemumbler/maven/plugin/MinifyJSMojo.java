@@ -13,6 +13,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -69,12 +70,7 @@ public class MinifyJSMojo
     }
 
     List<SourceFile> projectSourceFiles = new ArrayList<>();
-    File[] projectJSFiles = jsDirectory.listFiles(new FileFilter() {
-      @Override public boolean accept(File file) {
-        return !file.isDirectory() && file.getName().endsWith(".js");
-      }
-    });
-    for (File file : projectJSFiles) {
+    for (File file : getAllFilesMatchingPattern(jsDirectory)) {
       projectSourceFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
     }
 
@@ -101,6 +97,19 @@ public class MinifyJSMojo
         throw new MojoExecutionException("Error updating HTML files", e);
       }
     }
+  }
+
+  private List<File> getAllFilesMatchingPattern(final File parentDirectory) {
+    List<File> files = new ArrayList<>();
+    for (File file : parentDirectory.listFiles()) {
+      if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())) {
+        files.addAll(getAllFilesMatchingPattern(file));
+      }
+      if (file.getName().endsWith(".js")) {
+        files.add(file);
+      }
+    }
+    return files;
   }
 
   private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
