@@ -13,7 +13,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -24,24 +23,31 @@ public class MinifyJSMojo
     extends AbstractMojo {
 
   private static final String PATH_SEPARATOR = System.getProperty("file.separator");
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
   private File externalJsDirectory;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
   private File jsDirectory;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
   private String outputFilename;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "false")
   private boolean compile;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.basedir}/src/main/webapp")
   private File htmlSourceDirectory;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
   private String htmlOutputDirectory;
 
+  @SuppressWarnings("unused")
   @Parameter(defaultValue = "true")
   private boolean updateHTML;
 
@@ -70,7 +76,7 @@ public class MinifyJSMojo
     }
 
     List<SourceFile> projectSourceFiles = new ArrayList<>();
-    for (File file : getAllFilesMatchingPattern(jsDirectory)) {
+    for (File file : listFilesInSubDirectories(jsDirectory)) {
       projectSourceFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
     }
 
@@ -99,14 +105,17 @@ public class MinifyJSMojo
     }
   }
 
-  private List<File> getAllFilesMatchingPattern(final File parentDirectory) {
+  private List<File> listFilesInSubDirectories(final File parentDirectory) {
     List<File> files = new ArrayList<>();
-    for (File file : parentDirectory.listFiles()) {
-      if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())) {
-        files.addAll(getAllFilesMatchingPattern(file));
-      }
-      if (file.getName().endsWith(".js")) {
-        files.add(file);
+    File[] listOfFiles = parentDirectory.listFiles();
+    if (listOfFiles != null) {
+      for (File file : listOfFiles) {
+        if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())) {
+          files.addAll(listFilesInSubDirectories(file));
+        }
+        if (file.getName().endsWith(".js")) {
+          files.add(file);
+        }
       }
     }
     return files;
