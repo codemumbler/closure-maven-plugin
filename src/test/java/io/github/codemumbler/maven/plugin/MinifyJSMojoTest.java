@@ -61,6 +61,13 @@ public class MinifyJSMojoTest {
   }
 
   @Test
+  public void orderedJS() throws Exception {
+    executeMojo("target/test-classes/multi-js");
+    Assert.assertEquals(loadFileAsString("target/test-classes/multi-js/expected.js"),
+        loadFileAsString("target/test-classes/multi-js/target/multi-js/js/combined.min.js"));
+  }
+
+  @Test
   public void updateHTMLPage_updatedOneJs() throws Exception {
     executeMojo("target/test-classes/one-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.html"),

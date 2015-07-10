@@ -12,44 +12,36 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
-public class MinifyJSMojo
+@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE) public class MinifyJSMojo
     extends AbstractMojo {
 
   private static final String PATH_SEPARATOR = System.getProperty("file.separator");
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
-  private File externalJsDirectory;
+  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib") private File
+      externalJsDirectory;
+
+  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js") private File
+      jsDirectory;
 
   @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
-  private File jsDirectory;
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js") private String
+      outputFilename;
 
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
-  private String outputFilename;
+  @SuppressWarnings("unused") @Parameter(defaultValue = "false") private boolean compile;
 
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "false")
-  private boolean compile;
+  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp") private File
+      htmlSourceDirectory;
 
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.basedir}/src/main/webapp")
-  private File htmlSourceDirectory;
-
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
+  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
   private String htmlOutputDirectory;
 
-  @SuppressWarnings("unused")
-  @Parameter(defaultValue = "true")
-  private boolean updateHTML;
+  @SuppressWarnings("unused") @Parameter(defaultValue = "true") private boolean updateHTML;
+
+  @SuppressWarnings("unused") @Parameter private List<String> jsCompileOrder;
 
   public void execute() throws MojoExecutionException {
     com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
@@ -64,7 +56,7 @@ public class MinifyJSMojo
     WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
 
     List<SourceFile> externalJavascriptFiles = new ArrayList<>();
-    if ( externalJsDirectory != null && externalJsDirectory.listFiles() != null ) {
+    if (externalJsDirectory != null && externalJsDirectory.listFiles() != null) {
       File[] externalJSFiles = externalJsDirectory.listFiles(new FileFilter() {
         @Override public boolean accept(File file) {
           return !file.isDirectory() && file.getName().endsWith(".js");
@@ -75,12 +67,24 @@ public class MinifyJSMojo
       }
     }
 
-    List<SourceFile> projectSourceFiles = new ArrayList<>();
-    for (File file : listFilesInSubDirectories(jsDirectory)) {
-      projectSourceFiles.add(JSSourceFile.fromFile(file.getAbsolutePath()));
+    List<SourceFile> sourceFiles = new ArrayList<>();
+    if (jsCompileOrder == null || jsCompileOrder.isEmpty()) {
+      jsCompileOrder = new ArrayList<>();
+      jsCompileOrder.add(".*\\.js");
+    }
+    Set<File> projectSourceFiles = new LinkedHashSet<>();
+    for (String filePattern : jsCompileOrder) {
+      for (File file : listFilesMatchingPattern(jsDirectory, wildcardToRegex(filePattern))) {
+        if (!projectSourceFiles.contains(file)) {
+          projectSourceFiles.add(file);
+        }
+      }
+    }
+    for (File file : projectSourceFiles) {
+      sourceFiles.add(JSSourceFile.fromFile(file));
     }
 
-    compiler.compile(externalJavascriptFiles, projectSourceFiles, options);
+    compiler.compile(externalJavascriptFiles, sourceFiles, options);
 
     for (JSError message : compiler.getWarnings()) {
       System.err.println("Warning message: " + message.toString());
@@ -98,22 +102,26 @@ public class MinifyJSMojo
     }
     if (updateHTML) {
       try {
-        updateHTMLJSReferences(projectSourceFiles);
+        updateHTMLJSReferences(sourceFiles);
       } catch (Exception e) {
         throw new MojoExecutionException("Error updating HTML files", e);
       }
     }
   }
 
-  private List<File> listFilesInSubDirectories(final File parentDirectory) {
+  private String wildcardToRegex(String filePattern) {
+    return filePattern.replaceAll("\\.", "\\.").replaceAll("\\*", ".*");
+  }
+
+  private List<File> listFilesMatchingPattern(final File parentDirectory, String pattern) {
     List<File> files = new ArrayList<>();
     File[] listOfFiles = parentDirectory.listFiles();
     if (listOfFiles != null) {
       for (File file : listOfFiles) {
         if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())) {
-          files.addAll(listFilesInSubDirectories(file));
+          files.addAll(listFilesMatchingPattern(file, pattern));
         }
-        if (file.getName().endsWith(".js")) {
+        if (file.getName().matches(pattern)) {
           files.add(file);
         }
       }
@@ -123,8 +131,7 @@ public class MinifyJSMojo
 
   private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
-      @Override
-      public boolean accept(File pathname) {
+      @Override public boolean accept(File pathname) {
         return (pathname.getName().endsWith(".html"));
       }
     });
@@ -142,8 +149,8 @@ public class MinifyJSMojo
           continue;
         }
         if (matcher.find()) {
-          content = content.replaceAll("<script.*?src=\"" + src + "\".*?></script>",
-              "<script src=\"js/combined.min.js\"></script>");
+          content = content
+              .replaceAll("<script.*?src=\"" + src + "\".*?></script>", "<script src=\"js/combined.min.js\"></script>");
           replaced = true;
         }
       }

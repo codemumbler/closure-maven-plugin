@@ -1,0 +1,37 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.github.codemumbler</groupId>
+	<artifactId>multi-js</artifactId>
+	<packaging>jar</packaging>
+	<version>1.0-SNAPSHOT</version>
+	<name>test project</name>
+	<url>http://maven.apache.org</url>
+
+	<build>
+		<finalName>multi-js</finalName>
+		<plugins>
+			<plugin>
+				<groupId>io.github.codemumbler.maven.plugin</groupId>
+				<artifactId>closure-maven-plugin</artifactId>
+				<version>@project.version@</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>minify-js</goal>
+						</goals>
+						<phase>prepare-package</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<compile>true</compile>
+					<jsCompileOrder>
+						<order>datasource.js</order>
+						<order>main.js</order>
+						<order>*.js</order>
+					</jsCompileOrder>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
