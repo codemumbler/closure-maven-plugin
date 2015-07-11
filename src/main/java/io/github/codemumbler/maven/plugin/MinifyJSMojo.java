@@ -70,7 +70,7 @@ import java.util.regex.Pattern;
     List<SourceFile> sourceFiles = new ArrayList<>();
     if (jsCompileOrder == null || jsCompileOrder.isEmpty()) {
       jsCompileOrder = new ArrayList<>();
-      jsCompileOrder.add(".*\\.js");
+      jsCompileOrder.add("**/*.js");
     }
     Set<File> projectSourceFiles = new LinkedHashSet<>();
     for (String filePattern : jsCompileOrder) {
@@ -118,11 +118,25 @@ import java.util.regex.Pattern;
     File[] listOfFiles = parentDirectory.listFiles();
     if (listOfFiles != null) {
       for (File file : listOfFiles) {
-        if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())) {
-          files.addAll(listFilesMatchingPattern(file, pattern));
+        if (file.isDirectory() && !file.getAbsolutePath().equals(externalJsDirectory.getAbsolutePath())
+            && pattern.contains("/")) {
+          String folder = pattern.substring(0, pattern.indexOf("/"));
+          if (file.getName().matches(folder)) {
+            String subPattern = pattern;
+            if (!folder.equals(".*.*")) {
+              subPattern = pattern.replace(folder + "/", "");
+            }
+            files.addAll(listFilesMatchingPattern(file, subPattern));
+          }
         }
-        if (file.getName().matches(pattern)) {
-          files.add(file);
+        if (!file.isDirectory()) {
+          String filePattern = pattern;
+          if (pattern.startsWith(".*.*/")){
+            filePattern = pattern.substring(pattern.indexOf("/") + 1);
+          }
+          if (file.getName().matches(filePattern)) {
+            files.add(file);
+          }
         }
       }
     }

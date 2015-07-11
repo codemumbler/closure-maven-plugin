@@ -26,6 +26,7 @@
 				<configuration>
 					<compile>true</compile>
 					<jsCompileOrder>
+						<order>subfolder/browser.js</order>
 						<order>datasource.js</order>
 						<order>main.js</order>
 						<order>*.js</order>
