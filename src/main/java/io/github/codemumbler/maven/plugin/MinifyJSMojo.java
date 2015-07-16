@@ -17,31 +17,47 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE) public class MinifyJSMojo
+@Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
+public class MinifyJSMojo
     extends AbstractMojo {
 
   private static final String PATH_SEPARATOR = System.getProperty("file.separator");
-  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib") private File
-      externalJsDirectory;
-
-  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js") private File
-      jsDirectory;
 
   @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js") private String
-      outputFilename;
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
+  private File externalJsDirectory;
 
-  @SuppressWarnings("unused") @Parameter(defaultValue = "false") private boolean compile;
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js")
+  private File jsDirectory;
 
-  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.basedir}/src/main/webapp") private File
-      htmlSourceDirectory;
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
+  private String outputFilename;
 
-  @SuppressWarnings("unused") @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "false")
+  private boolean compile;
+
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "${project.basedir}/src/main/webapp")
+  private File htmlSourceDirectory;
+
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}")
   private String htmlOutputDirectory;
 
-  @SuppressWarnings("unused") @Parameter(defaultValue = "true") private boolean updateHTML;
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "true")
+  private boolean updateHTML;
 
-  @SuppressWarnings("unused") @Parameter private List<String> jsCompileOrder;
+  @SuppressWarnings("unused")
+  @Parameter
+  private List<String> jsCompileOrder;
+
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "true")
+  private boolean useHtmlForOrder;
 
   public void execute() throws MojoExecutionException {
     com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
@@ -68,6 +84,13 @@ import java.util.regex.Pattern;
     }
 
     List<SourceFile> sourceFiles = new ArrayList<>();
+    if (useHtmlForOrder){
+      try {
+        jsCompileOrder = scriptTagsInHTML();
+      } catch (Exception e) {
+        throw new MojoExecutionException("Failed to scan html for script tags", e);
+      }
+    }
     if (jsCompileOrder == null || jsCompileOrder.isEmpty()) {
       jsCompileOrder = new ArrayList<>();
       jsCompileOrder.add("**/*.js");
@@ -173,6 +196,28 @@ import java.util.regex.Pattern;
         outputFile.write(content);
       }
     }
+  }
+
+  private List<String> scriptTagsInHTML() throws Exception {
+    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return (pathname.getName().endsWith("index.html"));
+      }
+    });
+    List<String> scripts = new ArrayList<>();
+    for (File htmlFile : htmlFiles) {
+      String content = loadFileAsString(htmlFile);
+      Pattern pattern = Pattern.compile("<script.*?src=\"(.*?js)\".*?></script>");
+      Matcher matcher = pattern.matcher(content);
+      while (matcher.find()) {
+        String scriptFilename = matcher.group(1).substring(3);
+        if (!scriptFilename.startsWith("lib/")) {
+          scripts.add(matcher.group(1).substring(3));
+        }
+      }
+      break;
+    }
+    return scripts;
   }
 
   private String loadFileAsString(File file) throws Exception {

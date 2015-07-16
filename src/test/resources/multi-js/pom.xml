@@ -25,6 +25,7 @@
 				</executions>
 				<configuration>
 					<compile>true</compile>
+					<useHtmlForOrder>false</useHtmlForOrder>
 					<jsCompileOrder>
 						<order>subfolder/browser.js</order>
 						<order>datasource.js</order>
