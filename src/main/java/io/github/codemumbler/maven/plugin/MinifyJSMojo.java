@@ -173,7 +173,7 @@ public class MinifyJSMojo
   private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(pagePattern));
+        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
       }
     });
 
@@ -205,7 +205,7 @@ public class MinifyJSMojo
   private List<String> scriptTagsInHTML() throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(pagePattern));
+        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
       }
     });
     List<String> scripts = new ArrayList<>();

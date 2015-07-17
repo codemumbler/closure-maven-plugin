@@ -24,7 +24,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<pagePattern>index.jsp</pagePattern>
+					<pagePattern>*.jsp</pagePattern>
 				</configuration>
 			</plugin>
 		</plugins>
