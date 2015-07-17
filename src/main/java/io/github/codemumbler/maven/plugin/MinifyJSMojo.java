@@ -59,6 +59,10 @@ public class MinifyJSMojo
   @Parameter(defaultValue = "true")
   private boolean useHtmlForOrder;
 
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "index.html")
+  private String pagePattern;
+
   public void execute() throws MojoExecutionException {
     com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
     com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
@@ -169,7 +173,7 @@ public class MinifyJSMojo
   private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
-        return (pathname.getName().endsWith(".html"));
+        return (pathname.getName().matches(pagePattern));
       }
     });
 
@@ -201,7 +205,7 @@ public class MinifyJSMojo
   private List<String> scriptTagsInHTML() throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
-        return (pathname.getName().endsWith("index.html"));
+        return (pathname.getName().matches(pagePattern));
       }
     });
     List<String> scripts = new ArrayList<>();

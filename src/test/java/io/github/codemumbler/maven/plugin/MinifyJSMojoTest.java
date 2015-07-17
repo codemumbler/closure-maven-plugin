@@ -71,7 +71,7 @@ public class MinifyJSMojoTest {
   public void updateHTMLPage_updatedOneJs() throws Exception {
     executeMojo("target/test-classes/one-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.html"),
-        loadFileAsString("target/test-classes/one-js/target/one-js/index.html"));
+        loadFileAsString("target/test-classes/one-js/target/one-js/index.jsp"));
   }
 
   @Test

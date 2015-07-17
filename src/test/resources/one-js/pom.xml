@@ -23,6 +23,9 @@
 						<phase>prepare-package</phase>
 					</execution>
 				</executions>
+				<configuration>
+					<pagePattern>index.jsp</pagePattern>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
