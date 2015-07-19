@@ -29,42 +29,42 @@ public class MinifyJSMojoTest {
   public void oneJS() throws Exception {
     executeMojo("target/test-classes/one-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.js"),
-        loadFileAsString("target/test-classes/one-js/target/one-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/one-js/target/one-js/js/combined0.min.js"));
   }
 
   @Test
   public void twoJS() throws Exception {
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
-        loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/two-js/target/two-js/js/combined0.min.js"));
   }
 
   @Test
   public void subfolderJS() throws Exception {
     executeMojo("target/test-classes/subfolder-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/subfolder-js/expected.js"),
-        loadFileAsString("target/test-classes/subfolder-js/target/subfolder-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/subfolder-js/target/subfolder-js/js/combined0.min.js"));
   }
 
   @Test
   public void compile() throws Exception {
     executeMojo("target/test-classes/two-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/two-js/expected.js"),
-        loadFileAsString("target/test-classes/two-js/target/two-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/two-js/target/two-js/js/combined0.min.js"));
   }
 
   @Test
   public void externalLibrariesJS() throws Exception {
     executeMojo("target/test-classes/lib-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/lib-js/expected.js"),
-        loadFileAsString("target/test-classes/lib-js/target/lib-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/lib-js/target/lib-js/js/combined0.min.js"));
   }
 
   @Test
   public void orderedJS() throws Exception {
     executeMojo("target/test-classes/multi-js");
     Assert.assertEquals(loadFileAsString("target/test-classes/multi-js/expected.js"),
-        loadFileAsString("target/test-classes/multi-js/target/multi-js/js/combined.min.js"));
+        loadFileAsString("target/test-classes/multi-js/target/multi-js/js/combined0.min.js"));
   }
 
   @Test

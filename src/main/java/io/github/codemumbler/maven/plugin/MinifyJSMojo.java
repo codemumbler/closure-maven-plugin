@@ -32,8 +32,12 @@ public class MinifyJSMojo
   private File jsDirectory;
 
   @SuppressWarnings("unused")
-  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js/combined.min.js")
-  private String outputFilename;
+  @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}/js")
+  private String outputFilePath;
+
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "combined%d.min.js")
+  private String outputFileName;
 
   @SuppressWarnings("unused")
   @Parameter(defaultValue = "false")
@@ -63,9 +67,10 @@ public class MinifyJSMojo
   @Parameter(defaultValue = "index.html")
   private String pagePattern;
 
+  private int outputFileCount = 0;
+
   public void execute() throws MojoExecutionException {
-    com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
-    com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
+
 
     CompilerOptions options = new CompilerOptions();
     if (!compile) {
@@ -87,51 +92,57 @@ public class MinifyJSMojo
       }
     }
 
-    List<SourceFile> sourceFiles = new ArrayList<>();
-    if (useHtmlForOrder){
-      try {
-        jsCompileOrder = scriptTagsInHTML();
-      } catch (Exception e) {
-        throw new MojoExecutionException("Failed to scan html for script tags", e);
-      }
-    }
     if (jsCompileOrder == null || jsCompileOrder.isEmpty()) {
       jsCompileOrder = new ArrayList<>();
       jsCompileOrder.add("**/*.js");
     }
-    Set<File> projectSourceFiles = new LinkedHashSet<>();
-    for (String filePattern : jsCompileOrder) {
-      for (File file : listFilesMatchingPattern(jsDirectory, wildcardToRegex(filePattern))) {
-        if (!projectSourceFiles.contains(file)) {
-          projectSourceFiles.add(file);
+    Map<String, List<String>> scriptsPerHtml = new HashMap<>();
+    if (useHtmlForOrder){
+      try {
+        scriptsPerHtml = scriptTagsInHTML();
+      } catch (Exception e) {
+        throw new MojoExecutionException("Failed to scan html for script tags", e);
+      }
+    } else {
+      scriptsPerHtml.put(wildcardToRegex(pagePattern), jsCompileOrder);
+    }
+    for (String pageKey : scriptsPerHtml.keySet()) {
+      Set<File> projectSourceFiles = new LinkedHashSet<>();
+      List<SourceFile> sourceFiles = new ArrayList<>();
+      for (String filePattern : scriptsPerHtml.get(pageKey)) {
+        for (File file : listFilesMatchingPattern(jsDirectory, wildcardToRegex(filePattern))) {
+          if (!projectSourceFiles.contains(file)) {
+            projectSourceFiles.add(file);
+          }
         }
       }
-    }
-    for (File file : projectSourceFiles) {
-      sourceFiles.add(JSSourceFile.fromFile(file));
-    }
+      for (File file : projectSourceFiles) {
+        sourceFiles.add(JSSourceFile.fromFile(file));
+      }
+      com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
+      com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
+      Result result = compiler.compile(externalJavascriptFiles, sourceFiles, options);
 
-    compiler.compile(externalJavascriptFiles, sourceFiles, options);
+      for (JSError message : compiler.getWarnings()) {
+        getLog().debug("Warning message: " + message.toString());
+      }
 
-    for (JSError message : compiler.getWarnings()) {
-      System.err.println("Warning message: " + message.toString());
-    }
-
-    for (JSError message : compiler.getErrors()) {
-      System.err.println("Error message: " + message.toString());
-    }
-    String outputPath = outputFilename.substring(0, outputFilename.lastIndexOf("/"));
-    new File(outputPath).mkdirs();
-    try (FileWriter outputFile = new FileWriter(outputFilename)) {
-      outputFile.write(compiler.toSource());
-    } catch (Exception e) {
-      throw new MojoExecutionException("Error while writing minified file", e);
-    }
-    if (updateHTML) {
-      try {
-        updateHTMLJSReferences(sourceFiles);
+      for (JSError message : compiler.getErrors()) {
+        getLog().debug("Error message: " + message.toString());
+      }
+      String finalOutputFileName = String.format(outputFileName, outputFileCount++);
+      new File(outputFilePath).mkdirs();
+      try (FileWriter outputFile = new FileWriter(new File(outputFilePath, finalOutputFileName))) {
+        outputFile.write(compiler.toSource());
       } catch (Exception e) {
-        throw new MojoExecutionException("Error updating HTML files", e);
+        throw new MojoExecutionException("Error while writing minified file", e);
+      }
+      if (updateHTML) {
+        try {
+          updateHTMLJSReferences(pageKey, sourceFiles, finalOutputFileName);
+        } catch (Exception e) {
+          throw new MojoExecutionException("Error updating HTML files", e);
+        }
       }
     }
   }
@@ -170,10 +181,11 @@ public class MinifyJSMojo
     return files;
   }
 
-  private void updateHTMLJSReferences(List<SourceFile> projectSourceFiles) throws Exception {
+  private void updateHTMLJSReferences(final String pageRegex, List<SourceFile> projectSourceFiles,
+      String finalOutputFileName) throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
+        return (pathname.getName().matches(pageRegex));
       }
     });
 
@@ -191,7 +203,7 @@ public class MinifyJSMojo
         }
         if (matcher.find()) {
           content = content
-              .replaceAll("<script.*?src=\"" + src + "\".*?></script>", "<script src=\"js/combined.min.js\"></script>");
+              .replaceAll("<script.*?src=\"" + src + "\".*?></script>", "<script src=\"js/" + finalOutputFileName + "\"></script>");
           replaced = true;
         }
       }
@@ -202,14 +214,15 @@ public class MinifyJSMojo
     }
   }
 
-  private List<String> scriptTagsInHTML() throws Exception {
+  private Map<String, List<String>> scriptTagsInHTML() throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return (pathname.getName().matches(wildcardToRegex(pagePattern)));
       }
     });
-    List<String> scripts = new ArrayList<>();
+    Map<String, List<String>> scriptsPerPage = new HashMap<>();
     for (File htmlFile : htmlFiles) {
+      List<String> scripts = new ArrayList<>();
       String content = loadFileAsString(htmlFile);
       Pattern pattern = Pattern.compile("<script.*?src=\"(.*?js)\".*?></script>");
       Matcher matcher = pattern.matcher(content);
@@ -219,9 +232,9 @@ public class MinifyJSMojo
           scripts.add(matcher.group(1).substring(3));
         }
       }
-      break;
+      scriptsPerPage.put(htmlFile.getName(), scripts);
     }
-    return scripts;
+    return scriptsPerPage;
   }
 
   private String loadFileAsString(File file) throws Exception {
