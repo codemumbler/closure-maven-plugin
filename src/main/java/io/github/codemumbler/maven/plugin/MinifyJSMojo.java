@@ -13,7 +13,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,15 +70,6 @@ public class MinifyJSMojo
 
   public void execute() throws MojoExecutionException {
 
-
-    CompilerOptions options = new CompilerOptions();
-    if (!compile) {
-      CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
-    } else {
-      CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
-    }
-    WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
-
     List<SourceFile> externalJavascriptFiles = new ArrayList<>();
     if (externalJsDirectory != null && externalJsDirectory.listFiles() != null) {
       File[] externalJSFiles = externalJsDirectory.listFiles(new FileFilter() {
@@ -119,17 +109,9 @@ public class MinifyJSMojo
       for (File file : projectSourceFiles) {
         sourceFiles.add(JSSourceFile.fromFile(file));
       }
-      com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
-      com.google.javascript.jscomp.Compiler compiler = new com.google.javascript.jscomp.Compiler();
-      Result result = compiler.compile(externalJavascriptFiles, sourceFiles, options);
+      ClosureCompiler compiler = new ClosureCompiler(compile, getLog());
+      compiler.compile(externalJavascriptFiles, sourceFiles);
 
-      for (JSError message : compiler.getWarnings()) {
-        getLog().debug("Warning message: " + message.toString());
-      }
-
-      for (JSError message : compiler.getErrors()) {
-        getLog().debug("Error message: " + message.toString());
-      }
       String finalOutputFileName = String.format(outputFileName, outputFileCount++);
       new File(outputFilePath).mkdirs();
       try (FileWriter outputFile = new FileWriter(new File(outputFilePath, finalOutputFileName))) {
