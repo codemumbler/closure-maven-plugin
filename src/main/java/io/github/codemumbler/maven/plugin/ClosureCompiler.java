@@ -2,23 +2,26 @@ package io.github.codemumbler.maven.plugin;
 
 import com.google.javascript.jscomp.*;
 import com.google.javascript.jscomp.Compiler;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.List;
 import java.util.logging.Level;
 
-public class ClosureCompiler {
+class ClosureCompiler {
 
   private final Log log;
   private boolean compile;
   private Compiler compiler;
 
-  public ClosureCompiler(boolean compile, Log log) {
+  ClosureCompiler(boolean compile, Log log) {
     this.compile = compile;
     this.log = log;
   }
 
-  public void compile(List<SourceFile> externalJavascriptFiles, List<SourceFile> sourceFiles) {
+  void compile(List<SourceFile> externalJavascriptFiles, List<SourceFile> sourceFiles) {
     CompilerOptions options = new CompilerOptions();
     if (!compile) {
       CompilationLevel.WHITESPACE_ONLY.setOptionsForCompilationLevel(options);
@@ -39,7 +42,15 @@ public class ClosureCompiler {
     }
   }
 
-  public String toSource() {
-    return compiler.toSource();
+  public String saveCompiledSource(String outputFilePath, String outputFileName, int outputFileCount)
+      throws MojoExecutionException {
+    String finalOutputFileName = String.format(outputFileName, outputFileCount);
+    new File(outputFilePath).mkdirs();
+    try (FileWriter outputFile = new FileWriter(new File(outputFilePath, finalOutputFileName))) {
+      outputFile.write(compiler.toSource());
+    } catch (Exception e) {
+      throw new MojoExecutionException("Error while writing minified file", e);
+    }
+    return finalOutputFileName;
   }
 }

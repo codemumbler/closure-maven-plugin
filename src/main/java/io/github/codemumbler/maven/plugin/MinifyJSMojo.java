@@ -6,21 +6,15 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.codehaus.plexus.util.IOUtil;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
 public class MinifyJSMojo
     extends AbstractMojo {
-
-  private static final String PATH_SEPARATOR = System.getProperty("file.separator");
 
   @SuppressWarnings("unused")
   @Parameter(defaultValue = "${project.basedir}/src/main/webapp/js/lib")
@@ -86,13 +80,10 @@ public class MinifyJSMojo
       jsCompileOrder = new ArrayList<>();
       jsCompileOrder.add("**/*.js");
     }
+    HtmlParser htmlParser = new HtmlParser(htmlOutputDirectory, htmlSourceDirectory, pagePattern);
     Map<String, List<String>> scriptsPerHtml = new HashMap<>();
     if (useHtmlForOrder){
-      try {
-        scriptsPerHtml = scriptTagsInHTML();
-      } catch (Exception e) {
-        throw new MojoExecutionException("Failed to scan html for script tags", e);
-      }
+      scriptsPerHtml = htmlParser.scriptTagsInHTML();
     } else {
       scriptsPerHtml.put(wildcardToRegex(pagePattern), jsCompileOrder);
     }
@@ -111,20 +102,9 @@ public class MinifyJSMojo
       }
       ClosureCompiler compiler = new ClosureCompiler(compile, getLog());
       compiler.compile(externalJavascriptFiles, sourceFiles);
-
-      String finalOutputFileName = String.format(outputFileName, outputFileCount++);
-      new File(outputFilePath).mkdirs();
-      try (FileWriter outputFile = new FileWriter(new File(outputFilePath, finalOutputFileName))) {
-        outputFile.write(compiler.toSource());
-      } catch (Exception e) {
-        throw new MojoExecutionException("Error while writing minified file", e);
-      }
+      String finalOutputFileName = compiler.saveCompiledSource(outputFilePath, outputFileName, outputFileCount++);
       if (updateHTML) {
-        try {
-          updateHTMLJSReferences(pageKey, sourceFiles, finalOutputFileName);
-        } catch (Exception e) {
-          throw new MojoExecutionException("Error updating HTML files", e);
-        }
+        htmlParser.updateHtmlJsReferences(pageKey, sourceFiles, finalOutputFileName);
       }
     }
   }
@@ -161,65 +141,5 @@ public class MinifyJSMojo
       }
     }
     return files;
-  }
-
-  private void updateHTMLJSReferences(final String pageRegex, List<SourceFile> projectSourceFiles,
-      String finalOutputFileName) throws Exception {
-    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(pageRegex));
-      }
-    });
-
-    for (File htmlFile : htmlFiles) {
-      String content = loadFileAsString(htmlFile);
-      boolean replaced = false;
-      for (SourceFile jsSourceFile : projectSourceFiles) {
-        String src = jsSourceFile.getName().replace(htmlFile.getParentFile().getAbsolutePath() + PATH_SEPARATOR, "");
-        src = src.replace("\\", "/");
-        Pattern pattern = Pattern.compile("<script.*?src=\"" + src + "\".*?></script>");
-        Matcher matcher = pattern.matcher(content);
-        if (replaced) {
-          content = content.replaceAll("\\s*<script.*?src=\"" + src + "\".*?></script>", "");
-          continue;
-        }
-        if (matcher.find()) {
-          content = content
-              .replaceAll("<script.*?src=\"" + src + "\".*?></script>", "<script src=\"js/" + finalOutputFileName + "\"></script>");
-          replaced = true;
-        }
-      }
-      String outputHTMLFilename = htmlOutputDirectory + PATH_SEPARATOR + htmlFile.getName();
-      try (FileWriter outputFile = new FileWriter(outputHTMLFilename)) {
-        outputFile.write(content);
-      }
-    }
-  }
-
-  private Map<String, List<String>> scriptTagsInHTML() throws Exception {
-    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
-      }
-    });
-    Map<String, List<String>> scriptsPerPage = new HashMap<>();
-    for (File htmlFile : htmlFiles) {
-      List<String> scripts = new ArrayList<>();
-      String content = loadFileAsString(htmlFile);
-      Pattern pattern = Pattern.compile("<script.*?src=\"(.*?js)\".*?></script>");
-      Matcher matcher = pattern.matcher(content);
-      while (matcher.find()) {
-        String scriptFilename = matcher.group(1).substring(3);
-        if (!scriptFilename.startsWith("lib/")) {
-          scripts.add(matcher.group(1).substring(3));
-        }
-      }
-      scriptsPerPage.put(htmlFile.getName(), scripts);
-    }
-    return scriptsPerPage;
-  }
-
-  private String loadFileAsString(File file) throws Exception {
-    return IOUtil.toString(new FileInputStream(file)).replaceAll("\r", "").trim();
   }
 }
