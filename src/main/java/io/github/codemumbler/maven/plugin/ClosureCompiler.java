@@ -29,7 +29,7 @@ class ClosureCompiler {
       CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options);
     }
     WarningLevel.VERBOSE.setOptionsForWarningLevel(options);
-    com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.INFO);
+    com.google.javascript.jscomp.Compiler.setLoggingLevel(Level.SEVERE);
     compiler = new com.google.javascript.jscomp.Compiler();
     compiler.compile(externalJavascriptFiles, sourceFiles, options);
 
