@@ -57,8 +57,8 @@ class HtmlParser {
           continue;
         }
         if (matcher.find()) {
-          content = content
-              .replaceAll("<script.*?src=\"" + src + "\".*?></script>", "<script src=\"js/" + finalOutputFileName + "\"></script>");
+          content = content.replaceAll("<script.*?src=\"" + src + "\".*?></script>",
+              "<script src=\"js/" + finalOutputFileName + "\"></script>");
           replaced = true;
         }
       }
