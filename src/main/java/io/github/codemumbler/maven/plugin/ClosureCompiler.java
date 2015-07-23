@@ -13,7 +13,7 @@ import java.util.logging.Level;
 class ClosureCompiler {
 
   private final Log log;
-  private boolean compile;
+  private final boolean compile;
   private Compiler compiler;
 
   ClosureCompiler(boolean compile, Log log) {
@@ -42,7 +42,7 @@ class ClosureCompiler {
     }
   }
 
-  public String saveCompiledSource(String outputFilePath, String outputFileName, int outputFileCount)
+  String saveCompiledSource(String outputFilePath, String outputFileName, int outputFileCount)
       throws MojoExecutionException {
     String finalOutputFileName = String.format(outputFileName, outputFileCount);
     new File(outputFilePath).mkdirs();
