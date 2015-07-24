@@ -20,12 +20,10 @@ class HtmlParser {
   private static final String PATH_SEPARATOR = System.getProperty("file.separator");
   private final String htmlOutputDirectory;
   private final File htmlSourceDirectory;
-  private final String pagePattern;
 
-  HtmlParser(String htmlOutputDirectory, File htmlSourceDirectory, String pagePattern) {
+  HtmlParser(String htmlOutputDirectory, File htmlSourceDirectory) {
     this.htmlOutputDirectory = htmlOutputDirectory;
     this.htmlSourceDirectory = htmlSourceDirectory;
-    this.pagePattern = pagePattern;
   }
 
   void updateHtmlJsReferences(final String pageRegex, List<SourceFile> projectSourceFiles, String finalOutputFilename)
@@ -37,7 +35,30 @@ class HtmlParser {
     }
   }
 
-  void updateHtml(final String pageRegex, List<SourceFile> projectSourceFiles, String finalOutputFileName) throws Exception {
+  Map<String, List<String>> scriptTagsInHTML(final String pagePattern) throws MojoExecutionException {
+    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
+      @Override public boolean accept(File pathname) {
+        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
+      }
+    });
+    Map<String, List<String>> scriptsPerPage = new HashMap<>();
+    for (File htmlFile : htmlFiles) {
+      List<String> scripts = new ArrayList<>();
+      String content = loadFileAsString(htmlFile);
+      Pattern pattern = Pattern.compile("<script.*?src=\"(.*?js)\".*?></script>");
+      Matcher matcher = pattern.matcher(content);
+      while (matcher.find()) {
+        String scriptFilename = matcher.group(1).substring(3);
+        if (!scriptFilename.startsWith("lib/")) {
+          scripts.add(matcher.group(1).substring(3));
+        }
+      }
+      scriptsPerPage.put(htmlFile.getName(), scripts);
+    }
+    return scriptsPerPage;
+  }
+
+  private void updateHtml(final String pageRegex, List<SourceFile> projectSourceFiles, String finalOutputFileName) throws Exception {
     File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
       @Override public boolean accept(File pathname) {
         return (pathname.getName().matches(pageRegex));
@@ -67,29 +88,6 @@ class HtmlParser {
         outputFile.write(content);
       }
     }
-  }
-
-  Map<String, List<String>> scriptTagsInHTML() throws MojoExecutionException {
-    File[] htmlFiles = htmlSourceDirectory.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return (pathname.getName().matches(wildcardToRegex(pagePattern)));
-      }
-    });
-    Map<String, List<String>> scriptsPerPage = new HashMap<>();
-    for (File htmlFile : htmlFiles) {
-      List<String> scripts = new ArrayList<>();
-      String content = loadFileAsString(htmlFile);
-      Pattern pattern = Pattern.compile("<script.*?src=\"(.*?js)\".*?></script>");
-      Matcher matcher = pattern.matcher(content);
-      while (matcher.find()) {
-        String scriptFilename = matcher.group(1).substring(3);
-        if (!scriptFilename.startsWith("lib/")) {
-          scripts.add(matcher.group(1).substring(3));
-        }
-      }
-      scriptsPerPage.put(htmlFile.getName(), scripts);
-    }
-    return scriptsPerPage;
   }
 
   private String wildcardToRegex(String filePattern) {

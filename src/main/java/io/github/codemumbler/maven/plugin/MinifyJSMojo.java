@@ -9,7 +9,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileWriter;
 import java.util.*;
 
 @Mojo(name = "minify-js", defaultPhase = LifecyclePhase.PREPARE_PACKAGE)
@@ -70,10 +69,10 @@ public class MinifyJSMojo
       jsCompileOrder = new ArrayList<>();
       jsCompileOrder.add("**/*.js");
     }
-    HtmlParser htmlParser = new HtmlParser(htmlOutputDirectory, htmlSourceDirectory, pagePattern);
+    HtmlParser htmlParser = new HtmlParser(htmlOutputDirectory, htmlSourceDirectory);
     Map<String, List<String>> scriptsPerHtml = new HashMap<>();
     if (useHtmlForOrder){
-      scriptsPerHtml = htmlParser.scriptTagsInHTML();
+      scriptsPerHtml = htmlParser.scriptTagsInHTML(pagePattern);
     } else {
       scriptsPerHtml.put(wildcardToRegex(pagePattern), jsCompileOrder);
     }
