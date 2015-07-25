@@ -59,6 +59,10 @@ public class MinifyJSMojo
   @Parameter(defaultValue = "index.html")
   private String pagePattern;
 
+  @SuppressWarnings("unused")
+  @Parameter(defaultValue = "false")
+  private boolean generateMap;
+
   private int outputFileCount = 0;
 
   public void execute() throws MojoExecutionException {
@@ -89,11 +93,15 @@ public class MinifyJSMojo
       for (File file : projectSourceFiles) {
         sourceFiles.add(JSSourceFile.fromFile(file));
       }
-      ClosureCompiler compiler = new ClosureCompiler(compile, getLog());
-      compiler.compile(externalJavascriptFiles, sourceFiles);
-      String finalOutputFileName = compiler.saveCompiledSource(outputFilePath, outputFileName, outputFileCount++);
+      ClosureCompiler compiler = new ClosureCompiler(compile, outputFilePath, getLog());
+      compiler.compile(externalJavascriptFiles, sourceFiles, generateMap);
+      String finalOutputFileName = compiler.saveCompiledSource(outputFileName, outputFileCount++);
       if (updateHTML) {
         htmlParser.updateHtmlJsReferences(pageKey, sourceFiles, finalOutputFileName);
+      }
+      if (generateMap) {
+        String finalMapOutputFileName = finalOutputFileName + ".map";
+        compiler.saveMap(finalMapOutputFileName);
       }
     }
   }

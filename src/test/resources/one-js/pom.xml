@@ -25,6 +25,7 @@
 				</executions>
 				<configuration>
 					<pagePattern>*.jsp</pagePattern>
+					<generateMap>true</generateMap>
 				</configuration>
 			</plugin>
 		</plugins>

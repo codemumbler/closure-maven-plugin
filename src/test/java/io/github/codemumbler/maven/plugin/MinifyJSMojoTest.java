@@ -95,6 +95,13 @@ public class MinifyJSMojoTest {
         loadFileAsString("target/test-classes/lib-js/target/lib-js/index.html"));
   }
 
+  @Test
+  public void generateMapFile() throws Exception {
+    executeMojo("target/test-classes/one-js");
+    Assert.assertEquals(loadFileAsString("target/test-classes/one-js/expected.js.map"),
+        loadFileAsString("target/test-classes/one-js/target/one-js/js/combined0.min.js.map"));
+  }
+
   private String loadFileAsString(String fileName) throws Exception {
     return IOUtil.toString(new FileInputStream(fileName)).replaceAll("\r", "").trim();
   }

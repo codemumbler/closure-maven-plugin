@@ -1,0 +1,8 @@
+{
+"version":3,
+"file":"combined0.min.js.map",
+"lineCount":1,
+"mappings":"AAAA,IAAIA,EAAI,CACR,IAAIA,CAAJ,EAAS,CAAT,CACEC,KAAA,CAAM,MAAN;",
+"sources":["C:/Users/arm01/Dropbox/closure-maven-plugin/target/test-classes/one-js/src/main/webapp/js/main.js"],
+"names":["x","alert"]
+}
